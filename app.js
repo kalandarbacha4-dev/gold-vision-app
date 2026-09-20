@@ -18,21 +18,31 @@ document.addEventListener("DOMContentLoaded", () => {
 // ==========================================
 
 async function checkSession() {
+  try {
+    console.log("Gold Vision: checking session...");
 
-  const {
-    data: { session },
-    error
-  } = await supabaseClient.auth.getSession();
+    const result = await supabaseClient.auth.getSession();
 
-  if (error) {
-    console.error(error);
-    showLogin();
-    return;
-  }
+    console.log("Gold Vision: session result:", result);
 
-  if (session && session.user) {
-    await showDashboard();
-  } else {
+    if (result.error) {
+      console.error("Supabase session error:", result.error);
+      showLogin();
+      return;
+    }
+
+    const session = result.data?.session;
+
+    if (session && session.user) {
+      console.log("User session found");
+      await showDashboard();
+    } else {
+      console.log("No user session");
+      showLogin();
+    }
+
+  } catch (error) {
+    console.error("checkSession error:", error);
     showLogin();
   }
 }
