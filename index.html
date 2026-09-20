@@ -2,7 +2,6 @@
 <html lang="fa" dir="rtl">
 
 <head>
-
   <meta charset="UTF-8">
 
   <meta
@@ -15,98 +14,30 @@
     content="#0d47a1"
   >
 
-  <meta
-    name="description"
-    content="Gold Vision - سیستم مدیریت اعضا، ساختار، کتاب و کیف پول"
-  >
-
   <title>Gold Vision</title>
-
-  <link
-    rel="manifest"
-    href="manifest.json"
-  >
 
   <link
     rel="stylesheet"
     href="style.css"
   >
-
 </head>
-
 
 <body>
 
   <div id="app">
-
-    <div class="auth-page">
-
-      <div class="auth-card">
-
-        <div class="auth-logo">
-          GV
-        </div>
-
-        <h1>
-          Gold Vision
-        </h1>
-
-        <p class="auth-subtitle">
-          مسیر رشد و پیشرفت
-        </p>
-
-        <p>
-          در حال بررسی حساب...
-        </p>
-
-      </div>
-
+    <div class="loading">
+      در حال بارگذاری Gold Vision...
     </div>
-
   </div>
 
-
+  <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  console.log("SUPABASE LIBRARY:", typeof window.supabase);
-</script>
+
+  <!-- Gold Vision Supabase -->
   <script src="supabase.js"></script>
 
+  <!-- Gold Vision App -->
   <script src="app.js"></script>
-
-
-  <script>
-
-    if ("serviceWorker" in navigator) {
-
-      window.addEventListener(
-        "load",
-        () => {
-
-          navigator.serviceWorker
-            .register("./sw.js")
-            .then(() => {
-
-              console.log(
-                "Gold Vision PWA فعال شد."
-              );
-
-            })
-            .catch(error => {
-
-              console.error(
-                "Service Worker Error:",
-                error
-              );
-
-            });
-
-        }
-      );
-
-    }
-
-  </script>
 
 </body>
 
