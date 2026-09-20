@@ -138,11 +138,14 @@ function showLogin(message = "") {
               required
             >
 
-            <button
-              type="submit"
-              class="primary-button"
-              id="loginButton"
-            >
+            <<button
+  type="button"
+  class="primary-button"
+  id="loginButton"
+  onclick="loginUser()"
+>
+  ورود
+</button>
               ورود
             </button>
 
