@@ -1,4 +1,4 @@
-const CACHE_NAME = "gold-vision-v1";
+const CACHE_NAME = "gold-vision-v2";
 
 const FILES_TO_CACHE = [
   "./",
