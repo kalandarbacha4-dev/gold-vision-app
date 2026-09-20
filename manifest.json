@@ -1,1 +1,24 @@
-
+{
+  "name": "Gold Vision",
+  "short_name": "Gold Vision",
+  "description": "سیستم مدیریت اعضا، ساختار، کتاب و کیف پول Gold Vision",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f8fc",
+  "theme_color": "#0d47a1",
+  "orientation": "portrait",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
