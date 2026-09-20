@@ -9,4 +9,7 @@
 );
 
 const supabaseClient = window.supabaseClient;
-console.log("Gold Vision: Supabase client created:", !!supabaseClient);
+console.log(
+  "Gold Vision: Supabase client created:",
+  !!window.supabaseClient
+);
