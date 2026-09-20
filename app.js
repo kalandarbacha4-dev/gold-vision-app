@@ -1783,3 +1783,4 @@ if (window.supabaseClient) {
   );
 
 }
+window.loginUser = loginUser;
