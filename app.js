@@ -1,18 +1,37 @@
- const contentSection = document.getElementById("content-section");
+// ==========================================
+// GOLD VISION APP
+// Main Application
+// ==========================================
 
 
 // ==========================================
-// AUTH STATE
+// START
+// ==========================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  checkSession();
+});
+
+
+// ==========================================
+// SESSION
 // ==========================================
 
 async function checkSession() {
 
   const {
-    data: { session }
+    data: { session },
+    error
   } = await supabaseClient.auth.getSession();
 
-  if (session) {
-    await showDashboard(session.user);
+  if (error) {
+    console.error(error);
+    showLogin();
+    return;
+  }
+
+  if (session && session.user) {
+    await showDashboard();
   } else {
     showLogin();
   }
@@ -26,8 +45,7 @@ async function checkSession() {
 function showLogin() {
 
   document.body.innerHTML = `
-
-    <div id="auth-app">
+    <div class="auth-page">
 
       <div class="auth-card">
 
@@ -38,27 +56,17 @@ function showLogin() {
         <h1>Gold Vision</h1>
 
         <p class="auth-subtitle">
-          ورود به حساب کاربری
+          مسیر رشد و پیشرفت
         </p>
 
-
-        <form id="login-form">
-
-          <label>
-            ایمیل
-          </label>
+        <form onsubmit="loginUser(event)">
 
           <input
             id="login-email"
             type="email"
-            placeholder="ایمیل خود را وارد کنید"
+            placeholder="ایمیل"
             required
           />
-
-
-          <label>
-            رمز عبور
-          </label>
 
           <input
             id="login-password"
@@ -67,16 +75,11 @@ function showLogin() {
             required
           />
 
-
-          <button type="submit">
+          <button type="submit" class="primary-button">
             ورود
           </button>
 
         </form>
-
-
-        <p id="login-message"></p>
-
 
         <button
           class="switch-auth"
@@ -89,11 +92,6 @@ function showLogin() {
 
     </div>
   `;
-
-
-  document
-    .getElementById("login-form")
-    .addEventListener("submit", loginUser);
 }
 
 
@@ -104,8 +102,7 @@ function showLogin() {
 function showRegister() {
 
   document.body.innerHTML = `
-
-    <div id="auth-app">
+    <div class="auth-page">
 
       <div class="auth-card">
 
@@ -113,30 +110,20 @@ function showRegister() {
           GV
         </div>
 
-        <h1>Gold Vision</h1>
+        <h1>ثبت‌نام</h1>
 
         <p class="auth-subtitle">
-          ساخت حساب جدید
+          عضویت در Gold Vision
         </p>
 
-
-        <form id="register-form">
-
-          <label>
-            نام کامل
-          </label>
+        <form onsubmit="registerUser(event)">
 
           <input
             id="register-name"
             type="text"
-            placeholder="نام و نام خانوادگی"
+            placeholder="نام کامل"
             required
           />
-
-
-          <label>
-            شماره تلفن
-          </label>
 
           <input
             id="register-phone"
@@ -145,22 +132,12 @@ function showRegister() {
             required
           />
 
-
-          <label>
-            User ID
-          </label>
-
           <input
             id="register-user-id"
             type="text"
-            placeholder="شناسه کاربری"
+            placeholder="User ID"
             required
           />
-
-
-          <label>
-            کد معرف
-          </label>
 
           <input
             id="register-referral"
@@ -169,11 +146,6 @@ function showRegister() {
             required
           />
 
-
-          <label>
-            ایمیل
-          </label>
-
           <input
             id="register-email"
             type="email"
@@ -181,46 +153,31 @@ function showRegister() {
             required
           />
 
-
-          <label>
-            رمز عبور
-          </label>
-
           <input
             id="register-password"
             type="password"
-            placeholder="حداقل ۶ کاراکتر"
+            placeholder="رمز عبور"
             minlength="6"
             required
           />
 
-
-          <button type="submit">
+          <button type="submit" class="primary-button">
             ثبت‌نام
           </button>
 
         </form>
 
-
-        <p id="register-message"></p>
-
-
         <button
           class="switch-auth"
           onclick="showLogin()"
         >
-          قبلاً حساب دارید؟ ورود
+          حساب دارید؟ وارد شوید
         </button>
 
       </div>
 
     </div>
   `;
-
-
-  document
-    .getElementById("register-form")
-    .addEventListener("submit", registerUser);
 }
 
 
@@ -232,8 +189,7 @@ async function registerUser(event) {
 
   event.preventDefault();
 
-
-  const name =
+  const fullName =
     document.getElementById("register-name").value.trim();
 
   const phone =
@@ -242,7 +198,7 @@ async function registerUser(event) {
   const userId =
     document.getElementById("register-user-id").value.trim();
 
-  const referral =
+  const referralCode =
     document.getElementById("register-referral").value.trim();
 
   const email =
@@ -252,99 +208,225 @@ async function registerUser(event) {
     document.getElementById("register-password").value;
 
 
-  const message =
-    document.getElementById("register-message");
+  if (!fullName || !phone || !userId ||
+      !referralCode || !email || !password) {
+
+    alert("لطفاً تمام اطلاعات را وارد کنید.");
+    return;
+  }
 
 
-  message.textContent = "در حال ثبت‌نام...";
+  // ------------------------------------------
+  // Check User ID
+  // ------------------------------------------
+
+  const {
+    data: codeValid,
+    error: codeError
+  } = await supabaseClient.rpc(
+    "check_registration_code",
+    {
+      p_user_id: userId
+    }
+  );
 
 
-  try {
+  if (codeError) {
 
-    const {
-      data,
-      error
-    } = await supabaseClient.auth.signUp({
+    alert(
+      "خطا در بررسی User ID:\n" +
+      codeError.message
+    );
 
-      email: email,
+    return;
+  }
 
-      password: password,
 
-      options: {
+  if (!codeValid) {
 
-        data: {
-          full_name: name,
-          phone: phone,
-          user_id: userId,
-          referral_code: referral
-        }
+    alert(
+      "این User ID معتبر نیست یا قبلاً استفاده شده است."
+    );
 
+    return;
+  }
+
+
+  // ------------------------------------------
+  // Find Referral
+  // ------------------------------------------
+
+  const {
+    data: referrer,
+    error: referrerError
+  } = await supabaseClient
+    .from("profiles")
+    .select("id")
+    .eq("referral_code", referralCode)
+    .maybeSingle();
+
+
+  if (referrerError) {
+
+    alert(
+      "خطا در بررسی کد معرف:\n" +
+      referrerError.message
+    );
+
+    return;
+  }
+
+
+  if (!referrer) {
+
+    alert(
+      "کد معرف پیدا نشد."
+    );
+
+    return;
+  }
+
+
+  // ------------------------------------------
+  // Create Auth Account
+  // ------------------------------------------
+
+  const {
+    data,
+    error
+  } = await supabaseClient.auth.signUp({
+
+    email: email,
+
+    password: password,
+
+    options: {
+
+      data: {
+        full_name: fullName,
+        phone: phone,
+        user_id: userId
       }
+
+    }
+
+  });
+
+
+  if (error) {
+
+    alert(
+      "خطا در ثبت‌نام:\n" +
+      error.message
+    );
+
+    return;
+  }
+
+
+  if (!data.user) {
+
+    alert(
+      "ثبت‌نام انجام نشد."
+    );
+
+    return;
+  }
+
+
+  // ------------------------------------------
+  // Create Profile
+  // ------------------------------------------
+
+  const generatedReferral =
+    "GV" +
+    Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+
+
+  const {
+    error: profileError
+  } = await supabaseClient
+    .from("profiles")
+    .insert({
+
+      id: data.user.id,
+
+      user_id: userId,
+
+      full_name: fullName,
+
+      phone: phone,
+
+      referral_code: generatedReferral,
+
+      referred_by: referrer.id,
+
+      wallet_balance: 0,
+
+      role: "member",
+
+      status: "active"
 
     });
 
 
-    if (error) {
-      throw error;
-    }
+  if (profileError) {
+
+    alert(
+      "حساب ساخته شد اما پروفایل ایجاد نشد:\n" +
+      profileError.message
+    );
+
+    return;
+  }
 
 
-    if (!data.user) {
-      throw new Error(
-        "ثبت‌نام انجام نشد."
-      );
-    }
+  // ------------------------------------------
+  // Mark User ID as assigned
+  // ------------------------------------------
+
+  const {
+    error: codeUpdateError
+  } = await supabaseClient
+    .from("user_registration_codes")
+    .update({
+
+      used: true,
+
+      used_by: data.user.id,
+
+      used_at: new Date().toISOString(),
+
+      assigned_to: data.user.id
+
+    })
+    .eq("user_id", userId);
 
 
-    message.textContent =
-      "ثبت‌نام انجام شد. در حال ورود...";
+  if (codeUpdateError) {
 
-
-    const user = data.user;
-
-
-    // ایجاد پروفایل
-    const {
-      error: profileError
-    } = await supabaseClient
-      .from("profiles")
-      .insert({
-
-        id: user.id,
-
-        user_id: userId,
-
-        full_name: name,
-
-        phone: phone,
-
-        referral_code: referral
-
-      });
-
-
-    if (profileError) {
-      throw profileError;
-    }
-
-
-    await showDashboard(user);
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    message.textContent =
-      error.message ||
-      "خطایی در ثبت‌نام رخ داد.";
+    console.error(
+      "User ID assignment error:",
+      codeUpdateError
+    );
 
   }
+
+
+  alert(
+    "ثبت‌نام با موفقیت انجام شد ✅"
+  );
+
+
+  await showDashboard();
 }
 
 
 // ==========================================
-// LOGIN USER
+// LOGIN
 // ==========================================
 
 async function loginUser(event) {
@@ -357,14 +439,6 @@ async function loginUser(event) {
 
   const password =
     document.getElementById("login-password").value;
-
-
-  const message =
-    document.getElementById("login-message");
-
-
-  message.textContent =
-    "در حال ورود...";
 
 
   const {
@@ -381,14 +455,22 @@ async function loginUser(event) {
 
   if (error) {
 
-    message.textContent =
-      error.message;
+    alert(
+      "ایمیل یا رمز عبور نادرست است."
+    );
+
+    console.error(error);
 
     return;
   }
 
 
-  await showDashboard(data.user);
+  if (data.session) {
+
+    await showDashboard();
+
+  }
+
 }
 
 
@@ -396,7 +478,41 @@ async function loginUser(event) {
 // DASHBOARD
 // ==========================================
 
-async function showDashboard(user) {
+async function showDashboard() {
+
+  const {
+    data: { user },
+    error
+  } = await supabaseClient.auth.getUser();
+
+
+  if (error || !user) {
+
+    showLogin();
+
+    return;
+  }
+
+
+  const {
+    data: profile,
+    error: profileError
+  } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+
+  if (profileError || !profile) {
+
+    alert(
+      "اطلاعات حساب پیدا نشد."
+    );
+
+    return;
+  }
+
 
   document.body.innerHTML = `
 
@@ -432,11 +548,11 @@ async function showDashboard(user) {
         <section class="welcome-card">
 
           <h2>
-            خوش آمدید 👋
+            سلام ${escapeHTML(profile.full_name)} 👋
           </h2>
 
           <p>
-            حساب شما با موفقیت وارد شد.
+            به خانواده گولد ویژن خوش آمدید.
           </p>
 
         </section>
@@ -448,9 +564,19 @@ async function showDashboard(user) {
             class="menu-card"
             onclick="showSection('structure')"
           >
-            <span class="icon">👥</span>
-            <strong>ساختار من</strong>
-            <small>مشاهده زیرمجموعه</small>
+
+            <span class="icon">
+              👥
+            </span>
+
+            <strong>
+              ساختار من
+            </strong>
+
+            <small>
+              مشاهده زیرمجموعه
+            </small>
+
           </button>
 
 
@@ -458,9 +584,19 @@ async function showDashboard(user) {
             class="menu-card"
             onclick="showSection('books')"
           >
-            <span class="icon">📚</span>
-            <strong>کتاب‌ها</strong>
-            <small>تهیه و مطالعه کتاب</small>
+
+            <span class="icon">
+              📚
+            </span>
+
+            <strong>
+              کتاب‌ها
+            </strong>
+
+            <small>
+              تهیه و مطالعه کتاب
+            </small>
+
           </button>
 
 
@@ -468,9 +604,19 @@ async function showDashboard(user) {
             class="menu-card"
             onclick="showSection('wallet')"
           >
-            <span class="icon">💰</span>
-            <strong>کیف پول</strong>
-            <small>مشاهده موجودی</small>
+
+            <span class="icon">
+              💰
+            </span>
+
+            <strong>
+              کیف پول
+            </strong>
+
+            <small>
+              موجودی حساب
+            </small>
+
           </button>
 
 
@@ -478,9 +624,19 @@ async function showDashboard(user) {
             class="menu-card"
             onclick="showSection('referral')"
           >
-            <span class="icon">🔗</span>
-            <strong>کد معرف</strong>
-            <small>کد اختصاصی من</small>
+
+            <span class="icon">
+              🔗
+            </span>
+
+            <strong>
+              کد معرف
+            </strong>
+
+            <small>
+              کد اختصاصی من
+            </small>
+
           </button>
 
 
@@ -488,10 +644,46 @@ async function showDashboard(user) {
             class="menu-card"
             onclick="showSection('profile')"
           >
-            <span class="icon">👤</span>
-            <strong>حساب من</strong>
-            <small>اطلاعات حساب</small>
+
+            <span class="icon">
+              👤
+            </span>
+
+            <strong>
+              حساب من
+            </strong>
+
+            <small>
+              اطلاعات حساب
+            </small>
+
           </button>
+
+
+          ${
+            profile.role === "admin"
+              ? `
+                <button
+                  class="menu-card admin-menu-card"
+                  onclick="showAdminPanel()"
+                >
+
+                  <span class="icon">
+                    👑
+                  </span>
+
+                  <strong>
+                    پنل مدیریت
+                  </strong>
+
+                  <small>
+                    مدیریت Gold Vision
+                  </small>
+
+                </button>
+              `
+              : ""
+          }
 
         </section>
 
@@ -503,14 +695,16 @@ async function showDashboard(user) {
 
           <div class="empty-state">
 
-            <span>✨</span>
+            <span>
+              ✨
+            </span>
 
             <h3>
               Gold Vision
             </h3>
 
             <p>
-              به پنل خود خوش آمدید.
+              یکی از بخش‌های بالا را انتخاب کنید.
             </p>
 
           </div>
@@ -522,29 +716,58 @@ async function showDashboard(user) {
 
       <nav class="bottom-nav">
 
-        <button onclick="showSection('home')">
+        <button onclick="showDashboard()">
+
           <span>🏠</span>
-          <small>خانه</small>
+
+          <small>
+            خانه
+          </small>
+
         </button>
+
 
         <button onclick="showSection('structure')">
+
           <span>👥</span>
-          <small>ساختار</small>
+
+          <small>
+            ساختار
+          </small>
+
         </button>
+
 
         <button onclick="showSection('books')">
+
           <span>📚</span>
-          <small>کتاب</small>
+
+          <small>
+            کتاب
+          </small>
+
         </button>
+
 
         <button onclick="showSection('wallet')">
+
           <span>💰</span>
-          <small>کیف پول</small>
+
+          <small>
+            کیف پول
+          </small>
+
         </button>
 
+
         <button onclick="showSection('profile')">
+
           <span>👤</span>
-          <small>حساب</small>
+
+          <small>
+            حساب
+          </small>
+
         </button>
 
       </nav>
@@ -552,14 +775,11 @@ async function showDashboard(user) {
     </div>
 
   `;
-
-
-  showSection("home");
 }
 
 
 // ==========================================
-// SECTIONS
+// USER SECTIONS
 // ==========================================
 
 async function showSection(section) {
@@ -567,359 +787,60 @@ async function showSection(section) {
   const content =
     document.getElementById("content-section");
 
+
   if (!content) return;
 
 
-  if (section === "home") {
+  if (section === "structure") {
 
-    content.innerHTML = `
-
-      <div class="empty-state">
-
-        <span>✨</span>
-
-        <h3>
-          Gold Vision
-        </h3>
-
-        <p>
-          به مسیر رشد و پیشرفت خود ادامه دهید.
-        </p>
-
-      </div>
-
-    `;
+    await showUserStructure();
 
     return;
-  }
 
-
-  if (section === "profile") {
-
-    const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
-
-
-    const {
-      data: profile
-    } = await supabaseClient
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-
-    content.innerHTML = `
-
-      <h3>👤 حساب من</h3>
-
-      <div style="
-        margin-top:18px;
-        display:flex;
-        flex-direction:column;
-        gap:10px;
-      ">
-
-        <div style="
-          padding:15px;
-          background:#f5f8fc;
-          border-radius:14px;
-        ">
-          <small>نام</small>
-
-          <strong style="
-            display:block;
-            margin-top:5px;
-          ">
-            ${profile?.full_name || "-"}
-          </strong>
-        </div>
-
-
-        <div style="
-          padding:15px;
-          background:#f5f8fc;
-          border-radius:14px;
-        ">
-          <small>User ID</small>
-
-          <strong style="
-            display:block;
-            margin-top:5px;
-          ">
-            ${profile?.user_id || "-"}
-          </strong>
-        </div>
-
-
-        <button
-          onclick="logoutUser()"
-          style="
-            margin-top:10px;
-            padding:14px;
-            border:0;
-            border-radius:12px;
-            background:#0d47a1;
-            color:white;
-            font-weight:700;
-          "
-        >
-          خروج از حساب
-        </button>
-
-      </div>
-
-    `;
-
-    return;
-  }
-
-
-  if (section === "wallet") {
-
-    const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
-
-
-    const {
-      data: profile
-    } = await supabaseClient
-      .from("profiles")
-      .select("wallet_balance")
-      .eq("id", user.id)
-      .single();
-
-
-    const balance =
-      profile?.wallet_balance || 0;
-
-
-    content.innerHTML = `
-
-      <h3>💰 کیف پول</h3>
-
-      <div style="
-        margin-top:18px;
-        padding:25px;
-        border-radius:18px;
-        background:linear-gradient(
-          135deg,
-          #0d47a1,
-          #1976d2
-        );
-        color:white;
-        text-align:center;
-      ">
-
-        <small>
-          موجودی کیف پول
-        </small>
-
-        <div style="
-          font-size:30px;
-          font-weight:800;
-          margin-top:8px;
-        ">
-          ${balance} AFN
-        </div>
-
-      </div>
-
-      <p style="
-        color:#718096;
-        font-size:12px;
-        margin-top:12px;
-      ">
-        موجودی توسط مدیریت حساب ثبت و به‌روزرسانی می‌شود.
-      </p>
-
-    `;
-
-    return;
-  }
-
-
-  if (section === "referral") {
-
-    const {
-      data: { user }
-    } = await supabaseClient.auth.getUser();
-
-
-    const {
-      data: profile
-    } = await supabaseClient
-      .from("profiles")
-      .select("referral_code")
-      .eq("id", user.id)
-      .single();
-
-
-    const code =
-      profile?.referral_code || "-";
-
-
-    content.innerHTML = `
-
-      <h3>
-        🔗 کد معرف من
-      </h3>
-
-      <div style="
-        margin-top:18px;
-        padding:22px;
-        border:1px solid #e6ebf2;
-        border-radius:18px;
-        text-align:center;
-      ">
-
-        <small>
-          کد معرف شما
-        </small>
-
-        <div style="
-          margin-top:10px;
-          font-size:25px;
-          font-weight:800;
-          color:#0d47a1;
-        ">
-          ${code}
-        </div>
-
-        <button
-          onclick="copyReferralCode('${code}')"
-          style="
-            margin-top:15px;
-            padding:12px 20px;
-            border:0;
-            border-radius:12px;
-            background:#0d47a1;
-            color:white;
-            font-weight:700;
-          "
-        >
-          کپی کد
-        </button>
-
-      </div>
-
-    `;
-
-    return;
   }
 
 
   if (section === "books") {
 
-    const {
-      data: books
-    } = await supabaseClient
-      .from("books")
-      .select("*")
-      .eq("active", true)
-      .order("created_at", {
-        ascending: false
-      });
-
-
-    if (!books || books.length === 0) {
-
-      content.innerHTML = `
-
-        <div class="empty-state">
-
-          <span>📚</span>
-
-          <h3>
-            هنوز کتابی اضافه نشده است
-          </h3>
-
-          <p>
-            کتاب‌های Gold Vision بعداً از پنل مدیریت اضافه می‌شوند.
-          </p>
-
-        </div>
-
-      `;
-
-      return;
-    }
-
-
-    content.innerHTML = `
-
-      <h3>
-        📚 کتاب‌ها
-      </h3>
-
-      <div style="
-        margin-top:18px;
-        display:flex;
-        flex-direction:column;
-        gap:12px;
-      ">
-
-        ${books.map(book => `
-
-          <div style="
-            padding:18px;
-            border:1px solid #e6ebf2;
-            border-radius:16px;
-          ">
-
-            <strong>
-              ${book.title}
-            </strong>
-
-            <p style="
-              color:#718096;
-              margin-top:8px;
-              font-size:13px;
-            ">
-              ${book.description || ""}
-            </p>
-
-            <div style="
-              margin-top:12px;
-              font-weight:800;
-              color:#0d47a1;
-            ">
-              ${book.price} AFN
-            </div>
-
-          </div>
-
-        `).join("")}
-
-      </div>
-
-    `;
+    await showUserBooks();
 
     return;
+
   }
 
 
-  if (section === "structure") {
+  if (section === "wallet") {
 
-    content.innerHTML = `
+    await showUserWallet();
 
-      <div class="empty-state">
+    return;
 
-        <span>👥</span>
+  }
 
-        <h3>
-          ساختار من
-        </h3>
 
-        <p>
-          سیستم ساختار چندسطحی در مرحله بعدی فعال می‌شود.
-        </p>
+  if (section === "referral") {
 
-      </div>
+    await showUserReferral();
 
-    `;
+    return;
+
+  }
+
+
+  if (section === "profile") {
+
+    await showUserProfile();
+
+    return;
+
+  }
+
+
+  if (section === "home") {
+
+    await showDashboard();
+
+    return;
 
   }
 
@@ -927,22 +848,770 @@ async function showSection(section) {
 
 
 // ==========================================
-// COPY REFERRAL
+// USER STRUCTURE
 // ==========================================
 
-async function copyReferralCode(code) {
+async function showUserStructure() {
 
-  try {
+  const content =
+    document.getElementById("content-section");
 
-    await navigator.clipboard.writeText(code);
 
-    alert("کد معرف کپی شد.");
+  content.innerHTML = `
 
-  } catch {
+    <div class="empty-state">
 
-    alert("کپی کد انجام نشد.");
+      <span>
+        👥
+      </span>
+
+      <h3>
+        ساختار من
+      </h3>
+
+      <p>
+        سیستم ساختار تیم در مرحله بعد تکمیل می‌شود.
+      </p>
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// USER BOOKS
+// ==========================================
+
+async function showUserBooks() {
+
+  const content =
+    document.getElementById("content-section");
+
+
+  const {
+    data: books,
+    error
+  } = await supabaseClient
+    .from("books")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", {
+      ascending: false
+    });
+
+
+  if (error) {
+
+    content.innerHTML = `
+      <div class="empty-state">
+        <span>⚠️</span>
+        <h3>خطا</h3>
+        <p>${escapeHTML(error.message)}</p>
+      </div>
+    `;
+
+    return;
+  }
+
+
+  if (!books || books.length === 0) {
+
+    content.innerHTML = `
+
+      <div class="empty-state">
+
+        <span>
+          📚
+        </span>
+
+        <h3>
+          کتابی موجود نیست
+        </h3>
+
+        <p>
+          به‌زودی کتاب‌های Gold Vision اضافه می‌شوند.
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  content.innerHTML = `
+
+    <h3>
+      📚 کتاب‌های Gold Vision
+    </h3>
+
+    <div class="books-list">
+
+      ${books.map(book => `
+
+        <div class="book-card">
+
+          ${
+            book.cover_url
+              ? `
+                <img
+                  src="${escapeAttribute(book.cover_url)}"
+                  alt=""
+                />
+              `
+              : ""
+          }
+
+          <h4>
+            ${escapeHTML(book.title)}
+          </h4>
+
+          <p>
+            ${escapeHTML(book.description || "")}
+          </p>
+
+          <strong>
+            ${book.price} AFN
+          </strong>
+
+        </div>
+
+      `).join("")}
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// USER WALLET
+// ==========================================
+
+async function showUserWallet() {
+
+  const content =
+    document.getElementById("content-section");
+
+
+  const {
+    data: { user }
+  } = await supabaseClient.auth.getUser();
+
+
+  if (!user) {
+
+    showLogin();
+
+    return;
+  }
+
+
+  const {
+    data: profile,
+    error
+  } = await supabaseClient
+    .from("profiles")
+    .select("wallet_balance")
+    .eq("id", user.id)
+    .single();
+
+
+  if (error) {
+
+    content.innerHTML = `
+      <div class="empty-state">
+        <span>⚠️</span>
+        <h3>خطا</h3>
+        <p>${escapeHTML(error.message)}</p>
+      </div>
+    `;
+
+    return;
+  }
+
+
+  content.innerHTML = `
+
+    <div class="wallet-box">
+
+      <span>
+        💰
+      </span>
+
+      <h3>
+        موجودی کیف پول
+      </h3>
+
+      <div class="wallet-balance">
+        ${profile.wallet_balance || 0} AFN
+      </div>
+
+      <p>
+        افزایش موجودی توسط مدیریت انجام می‌شود.
+      </p>
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// REFERRAL
+// ==========================================
+
+async function showUserReferral() {
+
+  const content =
+    document.getElementById("content-section");
+
+
+  const {
+    data: { user }
+  } = await supabaseClient.auth.getUser();
+
+
+  const {
+    data: profile,
+    error
+  } = await supabaseClient
+    .from("profiles")
+    .select("referral_code,user_id")
+    .eq("id", user.id)
+    .single();
+
+
+  if (error) {
+
+    content.innerHTML = `
+      <div class="empty-state">
+        <span>⚠️</span>
+        <h3>خطا</h3>
+        <p>${escapeHTML(error.message)}</p>
+      </div>
+    `;
+
+    return;
+  }
+
+
+  content.innerHTML = `
+
+    <div class="referral-box">
+
+      <span>
+        🔗
+      </span>
+
+      <h3>
+        کد معرف من
+      </h3>
+
+      <div class="referral-code">
+        ${escapeHTML(profile.referral_code)}
+      </div>
+
+      <button
+        class="primary-button"
+        onclick="copyText('${escapeAttribute(profile.referral_code)}')"
+      >
+        📋 کپی کد
+      </button>
+
+      <p>
+        User ID: ${escapeHTML(profile.user_id)}
+      </p>
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// PROFILE
+// ==========================================
+
+async function showUserProfile() {
+
+  const content =
+    document.getElementById("content-section");
+
+
+  const {
+    data: { user }
+  } = await supabaseClient.auth.getUser();
+
+
+  const {
+    data: profile,
+    error
+  } = await supabaseClient
+    .from("profiles")
+    .select("full_name,phone,user_id,referral_code,role,status")
+    .eq("id", user.id)
+    .single();
+
+
+  if (error) {
+
+    content.innerHTML = `
+      <div class="empty-state">
+        <span>⚠️</span>
+        <h3>خطا</h3>
+        <p>${escapeHTML(error.message)}</p>
+      </div>
+    `;
+
+    return;
+  }
+
+
+  content.innerHTML = `
+
+    <div class="profile-box">
+
+      <span>
+        👤
+      </span>
+
+      <h3>
+        حساب من
+      </h3>
+
+      <div class="profile-row">
+        <span>نام</span>
+        <strong>
+          ${escapeHTML(profile.full_name)}
+        </strong>
+      </div>
+
+      <div class="profile-row">
+        <span>شماره</span>
+        <strong>
+          ${escapeHTML(profile.phone || "-")}
+        </strong>
+      </div>
+
+      <div class="profile-row">
+        <span>User ID</span>
+        <strong>
+          ${escapeHTML(profile.user_id)}
+        </strong>
+      </div>
+
+      <div class="profile-row">
+        <span>کد معرف</span>
+        <strong>
+          ${escapeHTML(profile.referral_code)}
+        </strong>
+      </div>
+
+      <div class="profile-row">
+        <span>وضعیت</span>
+        <strong>
+          ${escapeHTML(profile.status)}
+        </strong>
+      </div>
+
+      <button
+        class="secondary-button"
+        onclick="logoutUser()"
+      >
+        خروج از حساب
+      </button>
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// ADMIN ACCESS
+// ==========================================
+
+async function checkAdminAccess() {
+
+  const {
+    data: { user },
+    error
+  } = await supabaseClient.auth.getUser();
+
+
+  if (error || !user) {
+
+    return null;
 
   }
+
+
+  const {
+    data: profile,
+    error: profileError
+  } = await supabaseClient
+    .from("profiles")
+    .select("role,status,full_name,user_id")
+    .eq("id", user.id)
+    .single();
+
+
+  if (
+    profileError ||
+    !profile ||
+    profile.role !== "admin" ||
+    profile.status !== "active"
+  ) {
+
+    return null;
+
+  }
+
+
+  return profile;
+}
+
+
+// ==========================================
+// ADMIN PANEL
+// ==========================================
+
+async function showAdminPanel() {
+
+  const admin =
+    await checkAdminAccess();
+
+
+  if (!admin) {
+
+    alert("دسترسی غیرمجاز");
+
+    return;
+
+  }
+
+
+  const content =
+    document.getElementById("content-section");
+
+
+  if (!content) return;
+
+
+  content.innerHTML = `
+
+    <div class="admin-panel">
+
+      <div class="admin-header">
+
+        <span class="admin-icon">
+          👑
+        </span>
+
+        <div>
+
+          <h2>
+            پنل مدیریت
+          </h2>
+
+          <p>
+            ${escapeHTML(admin.full_name)}
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <div class="admin-grid">
+
+
+        <button
+          class="admin-card"
+          onclick="createNewUserID()"
+        >
+
+          <span>
+            🔑
+          </span>
+
+          <strong>
+            ایجاد User ID
+          </strong>
+
+          <small>
+            ساخت شناسه جدید
+          </small>
+
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminMembers()"
+        >
+
+          <span>
+            👥
+          </span>
+
+          <strong>
+            مدیریت اعضا
+          </strong>
+
+          <small>
+            مشاهده اعضا
+          </small>
+
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminWallet()"
+        >
+
+          <span>
+            💰
+          </span>
+
+          <strong>
+            مدیریت کیف پول
+          </strong>
+
+          <small>
+            مدیریت موجودی
+          </small>
+
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminBooks()"
+        >
+
+          <span>
+            📚
+          </span>
+
+          <strong>
+            مدیریت کتاب‌ها
+          </strong>
+
+          <small>
+            کتاب و قیمت
+          </small>
+
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminStructure()"
+        >
+
+          <span>
+            🌳
+          </span>
+
+          <strong>
+            ساختار تیم
+          </strong>
+
+          <small>
+            مشاهده ساختار
+          </small>
+
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminSettings()"
+        >
+
+          <span>
+            ⚙️
+          </span>
+
+          <strong>
+            تنظیمات اپ
+          </strong>
+
+          <small>
+            مدیریت ظاهر و متن
+          </small>
+
+        </button>
+
+
+      </div>
+
+
+      <button
+        class="secondary-button"
+        onclick="showDashboard()"
+      >
+        🏠 برگشت به خانه
+      </button>
+
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// CREATE USER ID
+// ==========================================
+
+async function createNewUserID() {
+
+  const admin =
+    await checkAdminAccess();
+
+
+  if (!admin) {
+
+    alert("دسترسی غیرمجاز");
+
+    return;
+
+  }
+
+
+  const {
+    data,
+    error
+  } = await supabaseClient.rpc(
+    "create_registration_code"
+  );
+
+
+  if (error) {
+
+    alert(
+      "خطا در ایجاد User ID:\n" +
+      error.message
+    );
+
+    console.error(error);
+
+    return;
+
+  }
+
+
+  const newUserID = data;
+
+
+  const content =
+    document.getElementById("content-section");
+
+
+  content.innerHTML = `
+
+    <div class="success-box">
+
+      <div class="success-icon">
+        ✅
+      </div>
+
+      <h2>
+        User ID ساخته شد
+      </h2>
+
+      <div class="new-user-id">
+        ${escapeHTML(newUserID)}
+      </div>
+
+      <button
+        class="primary-button"
+        onclick="copyText('${escapeAttribute(newUserID)}')"
+      >
+        📋 کپی User ID
+      </button>
+
+
+      <button
+        class="secondary-button"
+        onclick="showAdminPanel()"
+      >
+        برگشت به پنل مدیریت
+      </button>
+
+    </div>
+
+  `;
+}
+
+
+// ==========================================
+// ADMIN MEMBERS
+// ==========================================
+
+function showAdminMembers() {
+
+  alert(
+    "مدیریت اعضا در مرحله بعد فعال می‌شود."
+  );
+
+}
+
+
+// ==========================================
+// ADMIN WALLET
+// ==========================================
+
+function showAdminWallet() {
+
+  alert(
+    "مدیریت کیف پول در مرحله بعد فعال می‌شود."
+  );
+
+}
+
+
+// ==========================================
+// ADMIN BOOKS
+// ==========================================
+
+function showAdminBooks() {
+
+  alert(
+    "مدیریت کتاب‌ها در مرحله بعد فعال می‌شود."
+  );
+
+}
+
+
+// ==========================================
+// ADMIN STRUCTURE
+// ==========================================
+
+function showAdminStructure() {
+
+  alert(
+    "مدیریت ساختار تیم در مرحله بعد فعال می‌شود."
+  );
+
+}
+
+
+// ==========================================
+// ADMIN SETTINGS
+// ==========================================
+
+function showAdminSettings() {
+
+  alert(
+    "تنظیمات اپ در مرحله بعد فعال می‌شود."
+  );
 
 }
 
@@ -953,243 +1622,52 @@ async function copyReferralCode(code) {
 
 async function logoutUser() {
 
-  await supabaseClient.auth.signOut();
-
-  showLogin();
-
-}
-
-
-// ==========================================
-// START
-// ==========================================
-
-checkSession();
-// =========================
-// ADMIN PANEL
-// =========================
-
-async function checkAdminAccess() {
   const {
-    data: { user },
     error
-  } = await supabaseClient.auth.getUser();
+  } = await supabaseClient.auth.signOut();
 
-  if (error || !user) {
-    return false;
-  }
-
-  const { data: profile, error: profileError } =
-    await supabaseClient
-      .from("profiles")
-      .select("role,status,full_name,user_id")
-      .eq("id", user.id)
-      .single();
-
-  if (
-    profileError ||
-    !profile ||
-    profile.role !== "admin" ||
-    profile.status !== "active"
-  ) {
-    return false;
-  }
-
-  return profile;
-}
-
-
-async function showAdminPanel() {
-
-  const admin = await checkAdminAccess();
-
-  if (!admin) {
-    alert("دسترسی غیرمجاز");
-    return;
-  }
-
-  const content = document.getElementById("content-section");
-
-  content.innerHTML = `
-    <div class="admin-panel">
-
-      <div class="admin-header">
-        <span class="admin-icon">👑</span>
-
-        <div>
-          <h2>پنل مدیریت</h2>
-          <p>${admin.full_name}</p>
-        </div>
-      </div>
-
-
-      <div class="admin-grid">
-
-        <button
-          class="admin-card"
-          onclick="createNewUserID()"
-        >
-          <span>🔑</span>
-          <strong>ایجاد User ID</strong>
-          <small>ساخت شناسه جدید برای عضو</small>
-        </button>
-
-
-        <button
-          class="admin-card"
-          onclick="showAdminMembers()"
-        >
-          <span>👥</span>
-          <strong>مدیریت اعضا</strong>
-          <small>مشاهده اعضای Gold Vision</small>
-        </button>
-
-
-        <button
-          class="admin-card"
-          onclick="showAdminWallet()"
-        >
-          <span>💰</span>
-          <strong>مدیریت کیف پول</strong>
-          <small>افزایش و کاهش موجودی</small>
-        </button>
-
-
-        <button
-          class="admin-card"
-          onclick="showAdminBooks()"
-        >
-          <span>📚</span>
-          <strong>مدیریت کتاب‌ها</strong>
-          <small>کتاب، قیمت و PDF</small>
-        </button>
-
-
-        <button
-          class="admin-card"
-          onclick="showAdminStructure()"
-        >
-          <span>🌳</span>
-          <strong>ساختار تیم</strong>
-          <small>مشاهده ساختار اعضا</small>
-        </button>
-
-
-        <button
-          class="admin-card"
-          onclick="showAdminSettings()"
-        >
-          <span>⚙️</span>
-          <strong>تنظیمات اپ</strong>
-          <small>نام، رنگ، متن و ظاهر</small>
-        </button>
-
-      </div>
-
-    </div>
-  `;
-}
-
-
-// =========================
-// CREATE USER ID
-// =========================
-
-async function createNewUserID() {
-
-  const admin = await checkAdminAccess();
-
-  if (!admin) {
-    alert("دسترسی غیرمجاز");
-    return;
-  }
-
-  const {
-    data,
-    error
-  } = await supabaseClient.rpc(
-    "create_registration_code"
-  );
 
   if (error) {
-    alert("خطا در ایجاد User ID: " + error.message);
+
+    alert(
+      "خطا در خروج از حساب."
+    );
+
     return;
-  }
-
-  const newUserID = data;
-
-  const content = document.getElementById("content-section");
-
-  content.innerHTML = `
-    <div class="success-box">
-
-      <div class="success-icon">✅</div>
-
-      <h2>User ID ساخته شد</h2>
-
-      <div class="new-user-id">
-        ${newUserID}
-      </div>
-
-      <button
-        class="primary-button"
-        onclick="copyText('${newUserID}')"
-      >
-        📋 کپی User ID
-      </button>
-
-      <button
-        class="secondary-button"
-        onclick="showAdminPanel()"
-      >
-        برگشت به پنل مدیریت
-      </button>
-
-    </div>
-  `;
-}
-
-
-// =========================
-// COPY TEXT
-// =========================
-
-async function copyText(text) {
-
-  try {
-
-    await navigator.clipboard.writeText(text);
-
-    alert("کپی شد ✅");
-
-  } catch (error) {
-
-    alert("کپی انجام نشد. User ID را دستی کپی کنید.");
 
   }
+
+
+  showLogin();
 }
 
 
-// =========================
-// TEMP ADMIN SECTIONS
-// =========================
+// ==========================================
+// SAFE HTML
+// ==========================================
 
-function showAdminMembers() {
-  alert("بخش مدیریت اعضا در مرحله بعد ساخته می‌شود.");
+function escapeHTML(value) {
+
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function showAdminWallet() {
-  alert("بخش مدیریت کیف پول در مرحله بعد ساخته می‌شود.");
-}
 
-function showAdminBooks() {
-  alert("بخش مدیریت کتاب‌ها در مرحله بعد ساخته می‌شود.");
-}
+// ==========================================
+// SAFE ATTRIBUTE
+// ==========================================
 
-function showAdminStructure() {
-  alert("بخش ساختار تیم در مرحله بعد ساخته می‌شود.");
-}
+function escapeAttribute(value) {
 
-function showAdminSettings() {
-  alert("بخش تنظیمات در مرحله بعد ساخته می‌شود.");
+  return escapeHTML(value);
+
 }
