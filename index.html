@@ -1,21 +1,37 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
+
 <head>
-  <meta charset="UTF-8" />
 
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8">
 
-  <meta name="theme-color" content="#0d47a1" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-  <meta name="description"
-        content="Gold Vision - سیستم مدیریت اعضا، ساختار، کتاب و کیف پول" />
+  <meta
+    name="theme-color"
+    content="#0d47a1"
+  >
+
+  <meta
+    name="description"
+    content="Gold Vision - سیستم مدیریت اعضا، ساختار، کتاب و کیف پول"
+  >
 
   <title>Gold Vision</title>
 
-  <link rel="manifest" href="manifest.json" />
+  <link
+    rel="manifest"
+    href="manifest.json"
+  >
 
-  <link rel="stylesheet" href="style.css" />
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
 </head>
 
 
@@ -23,147 +39,73 @@
 
   <div id="app">
 
-    <!-- Header -->
-    <header class="top-header">
-      <div class="brand">
-        <div class="logo">GV</div>
+    <div class="auth-page">
 
-        <div>
-          <h1>Gold Vision</h1>
-          <span>مسیر رشد و پیشرفت</span>
+      <div class="auth-card">
+
+        <div class="auth-logo">
+          GV
         </div>
-      </div>
-    </header>
 
+        <h1>
+          Gold Vision
+        </h1>
 
-    <!-- Main Content -->
-    <main>
-
-      <!-- Welcome -->
-      <section class="welcome-card">
-        <h2>خوش آمدید 👋</h2>
+        <p class="auth-subtitle">
+          مسیر رشد و پیشرفت
+        </p>
 
         <p>
-          به خانواده گولد ویژن خوش آمدید.
+          در حال بررسی حساب...
         </p>
-      </section>
 
+      </div>
 
-      <!-- Menu -->
-      <section class="menu-grid">
-        <button
-  class="menu-card admin-menu-card"
-  onclick="showAdminPanel()"
->
-  <span class="icon">👑</span>
-  <strong>پنل مدیریت</strong>
-  <small>مدیریت Gold Vision</small>
-</button>
-
-        <button class="menu-card" onclick="showSection('structure')">
-          <span class="icon">👥</span>
-          <strong>ساختار من</strong>
-          <small>مشاهده زیرمجموعه</small>
-        </button>
-
-
-        <button class="menu-card" onclick="showSection('books')">
-          <span class="icon">📚</span>
-          <strong>کتاب‌ها</strong>
-          <small>تهیه و مطالعه کتاب</small>
-        </button>
-
-
-        <button class="menu-card" onclick="showSection('wallet')">
-          <span class="icon">💰</span>
-          <strong>کیف پول</strong>
-          <small>مشاهده موجودی</small>
-        </button>
-
-
-        <button class="menu-card" onclick="showSection('referral')">
-          <span class="icon">🔗</span>
-          <strong>کد معرف</strong>
-          <small>کد اختصاصی من</small>
-        </button>
-
-
-        <button class="menu-card" onclick="showSection('profile')">
-          <span class="icon">👤</span>
-          <strong>حساب من</strong>
-          <small>اطلاعات حساب</small>
-        </button>
-
-      </section>
-
-
-      <!-- Dynamic Section -->
-      <section id="content-section" class="content-section">
-
-        <div class="empty-state">
-          <span>✨</span>
-
-          <h3>Gold Vision</h3>
-
-          <p>
-            یکی از بخش‌های بالا را انتخاب کنید.
-          </p>
-        </div>
-
-      </section>
-
-    </main>
-
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-
-      <button onclick="showSection('home')">
-        <span>🏠</span>
-        <small>خانه</small>
-      </button>
-
-      <button onclick="showSection('structure')">
-        <span>👥</span>
-        <small>ساختار</small>
-      </button>
-
-      <button onclick="showSection('books')">
-        <span>📚</span>
-        <small>کتاب</small>
-      </button>
-
-      <button onclick="showSection('wallet')">
-        <span>💰</span>
-        <small>کیف پول</small>
-      </button>
-
-      <button onclick="showSection('profile')">
-        <span>👤</span>
-        <small>حساب</small>
-      </button>
-
-    </nav>
+    </div>
 
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase.js"></script>
-<script src="app.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="supabase.js"></script>
+
   <script src="app.js"></script>
+
+
   <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js")
-        .then(() => {
-          console.log("Gold Vision PWA فعال شد.");
-        })
-        .catch(error => {
-          console.error("Service Worker Error:", error);
-        });
-    });
-  }
-</script>
+
+    if ("serviceWorker" in navigator) {
+
+      window.addEventListener(
+        "load",
+        () => {
+
+          navigator.serviceWorker
+            .register("./sw.js")
+            .then(() => {
+
+              console.log(
+                "Gold Vision PWA فعال شد."
+              );
+
+            })
+            .catch(error => {
+
+              console.error(
+                "Service Worker Error:",
+                error
+              );
+
+            });
+
+        }
+      );
+
+    }
+
+  </script>
 
 </body>
+
 </html>
