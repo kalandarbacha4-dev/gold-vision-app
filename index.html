@@ -1,1 +1,146 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
 
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <meta name="theme-color" content="#0d47a1" />
+
+  <meta name="description"
+        content="Gold Vision - سیستم مدیریت اعضا، ساختار، کتاب و کیف پول" />
+
+  <title>Gold Vision</title>
+
+  <link rel="manifest" href="manifest.json" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+
+<body>
+
+  <div id="app">
+
+    <!-- Header -->
+    <header class="top-header">
+      <div class="brand">
+        <div class="logo">GV</div>
+
+        <div>
+          <h1>Gold Vision</h1>
+          <span>مسیر رشد و پیشرفت</span>
+        </div>
+      </div>
+    </header>
+
+
+    <!-- Main Content -->
+    <main>
+
+      <!-- Welcome -->
+      <section class="welcome-card">
+        <h2>خوش آمدید 👋</h2>
+
+        <p>
+          به خانواده گولد ویژن خوش آمدید.
+        </p>
+      </section>
+
+
+      <!-- Menu -->
+      <section class="menu-grid">
+
+        <button class="menu-card" onclick="showSection('structure')">
+          <span class="icon">👥</span>
+          <strong>ساختار من</strong>
+          <small>مشاهده زیرمجموعه</small>
+        </button>
+
+
+        <button class="menu-card" onclick="showSection('books')">
+          <span class="icon">📚</span>
+          <strong>کتاب‌ها</strong>
+          <small>تهیه و مطالعه کتاب</small>
+        </button>
+
+
+        <button class="menu-card" onclick="showSection('wallet')">
+          <span class="icon">💰</span>
+          <strong>کیف پول</strong>
+          <small>مشاهده موجودی</small>
+        </button>
+
+
+        <button class="menu-card" onclick="showSection('referral')">
+          <span class="icon">🔗</span>
+          <strong>کد معرف</strong>
+          <small>کد اختصاصی من</small>
+        </button>
+
+
+        <button class="menu-card" onclick="showSection('profile')">
+          <span class="icon">👤</span>
+          <strong>حساب من</strong>
+          <small>اطلاعات حساب</small>
+        </button>
+
+      </section>
+
+
+      <!-- Dynamic Section -->
+      <section id="content-section" class="content-section">
+
+        <div class="empty-state">
+          <span>✨</span>
+
+          <h3>Gold Vision</h3>
+
+          <p>
+            یکی از بخش‌های بالا را انتخاب کنید.
+          </p>
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+
+      <button onclick="showSection('home')">
+        <span>🏠</span>
+        <small>خانه</small>
+      </button>
+
+      <button onclick="showSection('structure')">
+        <span>👥</span>
+        <small>ساختار</small>
+      </button>
+
+      <button onclick="showSection('books')">
+        <span>📚</span>
+        <small>کتاب</small>
+      </button>
+
+      <button onclick="showSection('wallet')">
+        <span>💰</span>
+        <small>کیف پول</small>
+      </button>
+
+      <button onclick="showSection('profile')">
+        <span>👤</span>
+        <small>حساب</small>
+      </button>
+
+    </nav>
+
+  </div>
+
+
+  <script src="app.js"></script>
+
+</body>
+</html>
