@@ -7,3 +7,4 @@
 ‏  SUPABASE_URL,
 ‏  SUPABASE_KEY
 );
+console.log("Gold Vision: Supabase client created:", !!supabaseClient);
