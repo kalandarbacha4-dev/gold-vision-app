@@ -965,3 +965,231 @@ async function logoutUser() {
 // ==========================================
 
 checkSession();
+// =========================
+// ADMIN PANEL
+// =========================
+
+async function checkAdminAccess() {
+  const {
+    data: { user },
+    error
+  } = await supabaseClient.auth.getUser();
+
+  if (error || !user) {
+    return false;
+  }
+
+  const { data: profile, error: profileError } =
+    await supabaseClient
+      .from("profiles")
+      .select("role,status,full_name,user_id")
+      .eq("id", user.id)
+      .single();
+
+  if (
+    profileError ||
+    !profile ||
+    profile.role !== "admin" ||
+    profile.status !== "active"
+  ) {
+    return false;
+  }
+
+  return profile;
+}
+
+
+async function showAdminPanel() {
+
+  const admin = await checkAdminAccess();
+
+  if (!admin) {
+    alert("دسترسی غیرمجاز");
+    return;
+  }
+
+  const content = document.getElementById("content-section");
+
+  content.innerHTML = `
+    <div class="admin-panel">
+
+      <div class="admin-header">
+        <span class="admin-icon">👑</span>
+
+        <div>
+          <h2>پنل مدیریت</h2>
+          <p>${admin.full_name}</p>
+        </div>
+      </div>
+
+
+      <div class="admin-grid">
+
+        <button
+          class="admin-card"
+          onclick="createNewUserID()"
+        >
+          <span>🔑</span>
+          <strong>ایجاد User ID</strong>
+          <small>ساخت شناسه جدید برای عضو</small>
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminMembers()"
+        >
+          <span>👥</span>
+          <strong>مدیریت اعضا</strong>
+          <small>مشاهده اعضای Gold Vision</small>
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminWallet()"
+        >
+          <span>💰</span>
+          <strong>مدیریت کیف پول</strong>
+          <small>افزایش و کاهش موجودی</small>
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminBooks()"
+        >
+          <span>📚</span>
+          <strong>مدیریت کتاب‌ها</strong>
+          <small>کتاب، قیمت و PDF</small>
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminStructure()"
+        >
+          <span>🌳</span>
+          <strong>ساختار تیم</strong>
+          <small>مشاهده ساختار اعضا</small>
+        </button>
+
+
+        <button
+          class="admin-card"
+          onclick="showAdminSettings()"
+        >
+          <span>⚙️</span>
+          <strong>تنظیمات اپ</strong>
+          <small>نام، رنگ، متن و ظاهر</small>
+        </button>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+// =========================
+// CREATE USER ID
+// =========================
+
+async function createNewUserID() {
+
+  const admin = await checkAdminAccess();
+
+  if (!admin) {
+    alert("دسترسی غیرمجاز");
+    return;
+  }
+
+  const {
+    data,
+    error
+  } = await supabaseClient.rpc(
+    "create_registration_code"
+  );
+
+  if (error) {
+    alert("خطا در ایجاد User ID: " + error.message);
+    return;
+  }
+
+  const newUserID = data;
+
+  const content = document.getElementById("content-section");
+
+  content.innerHTML = `
+    <div class="success-box">
+
+      <div class="success-icon">✅</div>
+
+      <h2>User ID ساخته شد</h2>
+
+      <div class="new-user-id">
+        ${newUserID}
+      </div>
+
+      <button
+        class="primary-button"
+        onclick="copyText('${newUserID}')"
+      >
+        📋 کپی User ID
+      </button>
+
+      <button
+        class="secondary-button"
+        onclick="showAdminPanel()"
+      >
+        برگشت به پنل مدیریت
+      </button>
+
+    </div>
+  `;
+}
+
+
+// =========================
+// COPY TEXT
+// =========================
+
+async function copyText(text) {
+
+  try {
+
+    await navigator.clipboard.writeText(text);
+
+    alert("کپی شد ✅");
+
+  } catch (error) {
+
+    alert("کپی انجام نشد. User ID را دستی کپی کنید.");
+
+  }
+}
+
+
+// =========================
+// TEMP ADMIN SECTIONS
+// =========================
+
+function showAdminMembers() {
+  alert("بخش مدیریت اعضا در مرحله بعد ساخته می‌شود.");
+}
+
+function showAdminWallet() {
+  alert("بخش مدیریت کیف پول در مرحله بعد ساخته می‌شود.");
+}
+
+function showAdminBooks() {
+  alert("بخش مدیریت کتاب‌ها در مرحله بعد ساخته می‌شود.");
+}
+
+function showAdminStructure() {
+  alert("بخش ساختار تیم در مرحله بعد ساخته می‌شود.");
+}
+
+function showAdminSettings() {
+  alert("بخش تنظیمات در مرحله بعد ساخته می‌شود.");
+}
